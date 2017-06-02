@@ -1,5 +1,7 @@
 package su.elevenetc.flowcontrol;
 
+import java.util.List;
+
 import static su.elevenetc.flowcontrol.utils.Utils.isTrue;
 
 /**
@@ -7,14 +9,83 @@ import static su.elevenetc.flowcontrol.utils.Utils.isTrue;
  */
 public class FlowStep {
 
-    private final FlowControlMap flowControl;
+    private final FlowControl flowControl;
     private final int config;
     private State state = State.NOT_STARTED;
+    private FlowStep previous;
+    private FlowStep next;
+    List<FlowStep> flow;
 
-    public FlowStep(FlowControlMap flowControl, int config) {
+    public FlowStep() {
+        flowControl = null;
+        config = 0;
+    }
+
+    public FlowStep(FlowControl flowControl, int config) {
         this.flowControl = flowControl;
         this.config = config;
     }
+
+    public void setFlow(List<FlowStep> flow) {
+        this.flow = flow;
+    }
+
+    public <PreviousInput> void setPrevious(FlowStep previous) {
+        this.previous = previous;
+    }
+
+    public <NextOutput> FlowStep or(FlowStep next) {
+        return previous;
+    }
+
+
+    public FlowStep once() {
+        return this;
+    }
+
+    public FlowStep ifNeeded() {
+        return this;
+    }
+
+    public FlowStep withBack() {
+        //allow back to previous
+        return this;
+    }
+
+    public FlowStep onSuccess(FlowStep flowStep) {
+        return this;
+    }
+
+    public FlowStep withBackTo(FlowStep flowStep) {
+        return this;
+    }
+
+    public BackError onError(Class<? extends Throwable> t) {
+        return new BackError<>(t, this);
+    }
+
+    static class BackError<currentI, currentO> {
+
+        private Class<? extends Throwable> t;
+        private FlowStep current;
+
+        public BackError(Class<? extends Throwable> t, FlowStep current) {
+            this.t = t;
+
+            this.current = current;
+        }
+
+        public FlowStep backTo(FlowStep onErrorBackStep) {
+            //associate exception type with onErrorBackStep;
+            return current;
+        }
+    }
+
+    public FlowStep withErrorBackTo(FlowStep step) {
+        //add error even which allows to just back to particular step
+        return this;
+    }
+
 
     public void onStart() {
         flowControl.onStart(this);
@@ -43,12 +114,6 @@ public class FlowStep {
             return;
         }
         flowControl.onBackPressed(this);
-    }
-
-    public void onError(Throwable t) {
-        if (isTrue(config, Config.GO_BACK_ON_ERROR)) {
-            onBackPressed();
-        }
     }
 
     public void onRetry() {

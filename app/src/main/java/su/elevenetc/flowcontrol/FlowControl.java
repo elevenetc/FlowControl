@@ -6,11 +6,13 @@ import java.util.TreeMap;
 /**
  * Created by eugene.levenetc on 31/05/2017.
  */
-public class FlowControlMap {
+public abstract class FlowControl<Parcel extends FlowParcel> {
 
     private List<FlowStep> steps;
     private TreeMap<FlowStep, StepScreen> stepsMap;
     private int currentIndex;
+
+    protected abstract void init();
 
     public void start() {
         steps.get(currentIndex).onStart();
@@ -40,5 +42,13 @@ public class FlowControlMap {
 
     enum State {
         IN_PROGRESS
+    }
+
+    static class Builder {
+
+
+        void add(FlowStep step) {
+
+        }
     }
 }
