@@ -48,6 +48,7 @@ public class RegistrationFlow extends FlowControl<RegistrationFlow.RegistrationP
                 );
     }
 
+
     static class EntryStep extends FlowStep {
 
     }

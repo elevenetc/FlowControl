@@ -2,6 +2,8 @@ package su.elevenetc.flowcontrol;
 
 import java.util.List;
 
+import su.elevenetc.flowcontrol.logger.Logger;
+
 import static su.elevenetc.flowcontrol.utils.Utils.isTrue;
 
 /**
@@ -9,12 +11,17 @@ import static su.elevenetc.flowcontrol.utils.Utils.isTrue;
  */
 public class FlowStep {
 
-    private final FlowControl flowControl;
-    private final int config;
+    private FlowControl flowControl;
+    private int config;
     private State state = State.NOT_STARTED;
     private FlowStep previous;
-    private FlowStep next;
+    //public Set<FlowStep> next = new HashSet<>();
     List<FlowStep> flow;
+    FlowBuilder flowBuilder;
+
+    public FlowStep(FlowBuilder flowBuilder) {
+        this.flowBuilder = flowBuilder;
+    }
 
     public FlowStep() {
         flowControl = null;
@@ -24,6 +31,29 @@ public class FlowStep {
     public FlowStep(FlowControl flowControl, int config) {
         this.flowControl = flowControl;
         this.config = config;
+    }
+
+    protected void goTo(Class<? extends FlowStep> target) {
+        flowBuilder.goTo(this, target);
+    }
+
+    public void setFlowBuilder(FlowBuilder flowBuilder) {
+        this.flowBuilder = flowBuilder;
+    }
+
+    protected void nextStep() {
+        Logger.log(this, "nextStep");
+        flowBuilder.goToNext(this);
+    }
+
+    public FlowStep then(FlowStep next) {
+        flowBuilder.next(this, next);
+        return this;
+    }
+
+    public FlowStep thenOneOf(FlowStep... nextSteps) {
+        flowBuilder.thenOneOf(this, nextSteps);
+        return this;
     }
 
     public void setFlow(List<FlowStep> flow) {
@@ -88,17 +118,12 @@ public class FlowStep {
 
 
     public void onStart() {
-        flowControl.onStart(this);
-
-        if (state == State.FINISHED) {
-            onSuccess();
-        } else {
-            doWork();
-        }
+        Logger.log(this, "onStart");
+        doWork();
     }
 
     public void doWork() {
-        flowControl.doWork(this);
+        Logger.log(this, "doWork");
     }
 
     public void onPause() {
